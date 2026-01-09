@@ -53,11 +53,13 @@
       loop: "{{ instances }}"
       tags: destroy_ec2
 
-    - name: Delete root domain record
+    - name: Delete service Route53 A records
       amazon.aws.route53:
         state: absent
         zone: "{{ zone_name }}"
-        record: "{{ zone_name }}"  
+        record: "{{ item }}.{{ zone_name }}"  
         type: A
+        ttl: 1
+        value: "{{ r53_map[item] }}"
       loop: "{{ instances }}"
       tags: destroy_r53
