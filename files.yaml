@@ -1,0 +1,17 @@
+instances:
+- mongodb
+- redis
+- mysql
+- rabbitmq
+- catalogue
+- user
+- cart
+- shipping
+- payment
+- frontend
+subnet_id: subnet-0fcfac1eb0311ae88
+instance_type: t3.micro
+sg_id: sg-0503154617763dfc9
+image_id: ami-09c813fb71547fc4f
+zone_name: dawgs.online
+zone_id: ZZ0095538Q74XD6XU6M0Z

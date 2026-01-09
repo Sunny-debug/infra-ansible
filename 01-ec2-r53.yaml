@@ -1,0 +1,54 @@
+- name: Manage EC2 and Route53
+  hosts: localhost
+  connection: local
+  vars_files:
+    - files.yaml
+
+  tasks:
+    - name: Create EC2 instances
+      amazon.aws.ec2_instance:
+        name: "{{ item }}"
+        vpc_subnet_id: "{{ subnet_id }}"
+        instance_type: "{{ instance_type }}"
+        security_group: "{{ sg_id }}"
+        image_id: "{{ image_id }}"
+        tags:
+          Name: "{{ item }}"
+        state: present
+      loop: "{{ instances }}"
+      register: ec2_instance_output
+      tags: create
+
+    - name: Create Route53 records
+      amazon.aws.route53:
+        state: present
+        zone: "{{ zone_name }}"
+        record: "{{ item.record }}"
+        type: A
+        ttl: 1
+        value: "{{ item.value }}"
+        overwrite: true
+      loop: "{{ records | from_yaml }}"
+      vars:
+        records: >
+          {% set r = [] %}
+          {% for i in ec2_instance_output.results %}
+            {% set name = i.item %}
+            {% set private_ip = i.instances[0].private_ip_address %}
+            {% set public_ip = i.instances[0].public_ip_address %}
+            {% set _ = r.append({'record': name + '.' + zone_name, 'value': private_ip}) %}
+            {% if name == 'frontend' %}
+              {% set _ = r.append({'record': zone_name, 'value': public_ip}) %}
+            {% endif %}
+          {% endfor %}
+          {{ r }}
+      tags: create
+
+    - name: Terminate EC2 instances
+      amazon.aws.ec2_instance:
+        filters:
+          "tag:Name": "{{ item }}"
+        state: absent
+        wait: yes
+      loop: "{{ instances }}"
+      tags: destroy
