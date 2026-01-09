@@ -52,3 +52,12 @@
         wait: yes
       loop: "{{ instances }}"
       tags: destroy
+
+    - name: Delete root domain record
+      amazon.aws.route53:
+        state: absent
+        zone: "{{ zone_name }}"
+        record: "{{ zone_name }}"  
+        type: A
+      loop: "{{ instances }}"
+      tags: destroy
